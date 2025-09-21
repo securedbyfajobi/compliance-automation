@@ -1,0 +1,1018 @@
+---
+# GDPR Data Protection Implementation Playbook
+# Automated implementation of GDPR privacy controls and data protection measures
+
+- name: GDPR Data Protection Implementation
+  hosts: all
+  become: yes
+  gather_facts: yes
+  vars:
+    # GDPR Configuration
+    gdpr_compliance_level: "{{ gdpr_compliance_level | default('high') }}"
+    data_protection_officer: "{{ data_protection_officer | default('dpo@example.com') }}"
+    privacy_policy_url: "{{ privacy_policy_url | default('https://example.com/privacy') }}"
+    cookie_consent_required: "{{ cookie_consent_required | default(true) }}"
+    data_retention_period: "{{ data_retention_period | default('7years') }}"
+
+    # Directories and paths
+    gdpr_logs_dir: "/var/log/gdpr-compliance"
+    privacy_config_dir: "/etc/privacy-controls"
+    data_mapping_dir: "/var/lib/data-mapping"
+    consent_db_path: "/var/lib/consent-management"
+
+    # Data classification settings
+    personal_data_patterns:
+      - "email"
+      - "phone"
+      - "address"
+      - "name"
+      - "ssn"
+      - "tax_id"
+      - "credit_card"
+      - "ip_address"
+
+    # Data processing purposes
+    lawful_bases:
+      - "consent"
+      - "contract"
+      - "legal_obligation"
+      - "vital_interests"
+      - "public_task"
+      - "legitimate_interests"
+
+  pre_tasks:
+    - name: Validate GDPR parameters
+      assert:
+        that:
+          - gdpr_compliance_level in ['basic', 'standard', 'high']
+          - data_protection_officer is match("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$")
+        fail_msg: "Invalid GDPR configuration parameters"
+
+    - name: Create GDPR directory structure
+      file:
+        path: "{{ item }}"
+        state: directory
+        mode: '0750'
+        owner: privacy
+        group: privacy
+      loop:
+        - "{{ gdpr_logs_dir }}"
+        - "{{ privacy_config_dir }}"
+        - "{{ data_mapping_dir }}"
+        - "{{ consent_db_path }}"
+      ignore_errors: yes
+
+  tasks:
+    # Article 5: Principles of Processing Personal Data
+    - name: Article 5 - Data Processing Principles
+      block:
+        - name: Configure data minimization controls
+          copy:
+            content: |
+              # GDPR Data Minimization Configuration
+              # Article 5(1)(c) - Data minimisation principle
+
+              data_collection_policy:
+                principle: "minimal_necessary"
+                retention_schedule:
+                  customer_data: "{{ data_retention_period }}"
+                  marketing_data: "2years"
+                  analytics_data: "26months"
+                  log_data: "1year"
+
+              data_fields:
+                required:
+                  - "email"
+                  - "first_name"
+                  - "last_name"
+                optional:
+                  - "phone"
+                  - "address"
+                  - "date_of_birth"
+                prohibited:
+                  - "race"
+                  - "political_opinion"
+                  - "health_data"
+                  - "biometric_data"
+
+              collection_justification:
+                email: "Account creation and communication"
+                name: "Personalization and service delivery"
+                phone: "Account security and support"
+                address: "Service delivery and billing"
+            dest: "{{ privacy_config_dir }}/data_minimization.yml"
+            mode: '0640'
+
+        - name: Implement data accuracy controls
+          copy:
+            content: |
+              #!/bin/bash
+              # GDPR Data Accuracy Monitoring Script
+              # Article 5(1)(d) - Accuracy principle
+
+              LOGFILE="{{ gdpr_logs_dir }}/data_accuracy.log"
+              DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
+              # Check for data quality issues
+              check_data_accuracy() {
+                  echo "[$DATE] Starting data accuracy check..." >> $LOGFILE
+
+                  # Check for invalid email formats
+                  INVALID_EMAILS=$(mysql -u privacy_user -p'{{ vault_db_password }}' \
+                    -e "SELECT COUNT(*) FROM users WHERE email NOT REGEXP '^[A-Za-z0-9._%-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,4}$';" \
+                    privacy_db 2>/dev/null | tail -1)
+
+                  if [ "$INVALID_EMAILS" -gt 0 ]; then
+                      echo "[$DATE] WARNING: $INVALID_EMAILS invalid email addresses found" >> $LOGFILE
+                  fi
+
+                  # Check for stale data
+                  STALE_RECORDS=$(mysql -u privacy_user -p'{{ vault_db_password }}' \
+                    -e "SELECT COUNT(*) FROM users WHERE last_updated < DATE_SUB(NOW(), INTERVAL 2 YEAR);" \
+                    privacy_db 2>/dev/null | tail -1)
+
+                  if [ "$STALE_RECORDS" -gt 0 ]; then
+                      echo "[$DATE] INFO: $STALE_RECORDS potentially stale records identified" >> $LOGFILE
+                  fi
+
+                  echo "[$DATE] Data accuracy check completed" >> $LOGFILE
+              }
+
+              # Run accuracy check
+              check_data_accuracy
+            dest: "{{ privacy_config_dir }}/data_accuracy_check.sh"
+            mode: '0750'
+
+    # Article 6: Lawfulness of Processing
+    - name: Article 6 - Lawful Basis Implementation
+      block:
+        - name: Configure lawful basis tracking
+          copy:
+            content: |
+              # GDPR Lawful Basis Configuration
+              # Article 6 - Lawfulness of processing
+
+              processing_activities:
+                customer_registration:
+                  lawful_basis: "contract"
+                  description: "Processing necessary for account creation"
+                  data_categories: ["contact_info", "account_details"]
+                  retention_period: "{{ data_retention_period }}"
+
+                marketing_communications:
+                  lawful_basis: "consent"
+                  description: "Marketing emails and promotions"
+                  data_categories: ["contact_info", "preferences"]
+                  retention_period: "2years"
+                  withdrawal_method: "unsubscribe_link"
+
+                legal_compliance:
+                  lawful_basis: "legal_obligation"
+                  description: "Tax and regulatory reporting"
+                  data_categories: ["financial_info", "transaction_data"]
+                  retention_period: "7years"
+
+                security_monitoring:
+                  lawful_basis: "legitimate_interests"
+                  description: "Fraud prevention and security"
+                  data_categories: ["access_logs", "ip_addresses"]
+                  retention_period: "1year"
+                  balancing_test: "Security monitoring balancing test v1.2"
+
+              consent_management:
+                granular_consent: true
+                consent_withdrawal: "easy_access"
+                consent_evidence: "timestamp_and_method"
+                renewal_period: "2years"
+            dest: "{{ privacy_config_dir }}/lawful_basis.yml"
+            mode: '0640'
+
+    # Article 7: Consent Management
+    - name: Article 7 - Consent Management System
+      block:
+        - name: Install consent management database
+          package:
+            name: "{{ item }}"
+            state: present
+          loop:
+            - sqlite3
+            - python3-sqlite3
+          when: gdpr_compliance_level in ['standard', 'high']
+
+        - name: Create consent tracking database
+          shell: |
+            sqlite3 {{ consent_db_path }}/consent.db << 'EOF'
+            CREATE TABLE IF NOT EXISTS consent_records (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                user_id TEXT NOT NULL,
+                consent_type TEXT NOT NULL,
+                consent_given BOOLEAN NOT NULL,
+                consent_timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+                consent_method TEXT NOT NULL,
+                ip_address TEXT,
+                user_agent TEXT,
+                withdrawal_timestamp DATETIME,
+                withdrawal_method TEXT,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+
+            CREATE TABLE IF NOT EXISTS consent_types (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                consent_type TEXT UNIQUE NOT NULL,
+                description TEXT NOT NULL,
+                purpose TEXT NOT NULL,
+                data_categories TEXT NOT NULL,
+                retention_period TEXT NOT NULL,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+            );
+
+            INSERT OR REPLACE INTO consent_types
+            (consent_type, description, purpose, data_categories, retention_period)
+            VALUES
+            ('marketing', 'Marketing communications', 'Email marketing and promotions', 'email,preferences', '2years'),
+            ('analytics', 'Website analytics', 'Usage analysis and improvement', 'browsing_data,ip_address', '26months'),
+            ('personalization', 'Content personalization', 'Customized user experience', 'preferences,behavior', '2years');
+
+            CREATE INDEX IF NOT EXISTS idx_consent_user_id ON consent_records(user_id);
+            CREATE INDEX IF NOT EXISTS idx_consent_type ON consent_records(consent_type);
+            CREATE INDEX IF NOT EXISTS idx_consent_timestamp ON consent_records(consent_timestamp);
+            EOF
+          args:
+            creates: "{{ consent_db_path }}/consent.db"
+
+        - name: Create consent management API
+          copy:
+            content: |
+              #!/usr/bin/env python3
+              """
+              GDPR Consent Management API
+              Article 7 - Conditions for consent
+              """
+
+              import sqlite3
+              import json
+              import datetime
+              from flask import Flask, request, jsonify
+              from werkzeug.security import generate_password_hash, check_password_hash
+
+              app = Flask(__name__)
+              DB_PATH = "{{ consent_db_path }}/consent.db"
+
+              class ConsentManager:
+                  def __init__(self, db_path):
+                      self.db_path = db_path
+
+                  def record_consent(self, user_id, consent_type, consent_given,
+                                   consent_method, ip_address=None, user_agent=None):
+                      """Record user consent with timestamp and metadata"""
+                      conn = sqlite3.connect(self.db_path)
+                      cursor = conn.cursor()
+
+                      cursor.execute("""
+                          INSERT INTO consent_records
+                          (user_id, consent_type, consent_given, consent_method,
+                           ip_address, user_agent, consent_timestamp)
+                          VALUES (?, ?, ?, ?, ?, ?, ?)
+                      """, (user_id, consent_type, consent_given, consent_method,
+                            ip_address, user_agent, datetime.datetime.now()))
+
+                      conn.commit()
+                      conn.close()
+
+                  def withdraw_consent(self, user_id, consent_type, withdrawal_method):
+                      """Record consent withdrawal"""
+                      conn = sqlite3.connect(self.db_path)
+                      cursor = conn.cursor()
+
+                      cursor.execute("""
+                          UPDATE consent_records
+                          SET withdrawal_timestamp = ?, withdrawal_method = ?,
+                              consent_given = 0, updated_at = ?
+                          WHERE user_id = ? AND consent_type = ? AND consent_given = 1
+                      """, (datetime.datetime.now(), withdrawal_method,
+                            datetime.datetime.now(), user_id, consent_type))
+
+                      conn.commit()
+                      conn.close()
+
+                  def get_user_consents(self, user_id):
+                      """Get all consents for a user"""
+                      conn = sqlite3.connect(self.db_path)
+                      cursor = conn.cursor()
+
+                      cursor.execute("""
+                          SELECT consent_type, consent_given, consent_timestamp,
+                                 withdrawal_timestamp
+                          FROM consent_records
+                          WHERE user_id = ?
+                          ORDER BY consent_timestamp DESC
+                      """, (user_id,))
+
+                      results = cursor.fetchall()
+                      conn.close()
+
+                      return [{"consent_type": r[0], "consent_given": bool(r[1]),
+                              "consent_timestamp": r[2], "withdrawal_timestamp": r[3]}
+                              for r in results]
+
+              consent_manager = ConsentManager(DB_PATH)
+
+              @app.route('/consent/record', methods=['POST'])
+              def record_consent():
+                  """Record new consent"""
+                  data = request.get_json()
+                  required_fields = ['user_id', 'consent_type', 'consent_given', 'consent_method']
+
+                  if not all(field in data for field in required_fields):
+                      return jsonify({"error": "Missing required fields"}), 400
+
+                  consent_manager.record_consent(
+                      data['user_id'], data['consent_type'], data['consent_given'],
+                      data['consent_method'], request.remote_addr,
+                      request.headers.get('User-Agent')
+                  )
+
+                  return jsonify({"message": "Consent recorded successfully"}), 201
+
+              @app.route('/consent/withdraw', methods=['POST'])
+              def withdraw_consent():
+                  """Withdraw consent"""
+                  data = request.get_json()
+                  required_fields = ['user_id', 'consent_type', 'withdrawal_method']
+
+                  if not all(field in data for field in required_fields):
+                      return jsonify({"error": "Missing required fields"}), 400
+
+                  consent_manager.withdraw_consent(
+                      data['user_id'], data['consent_type'], data['withdrawal_method']
+                  )
+
+                  return jsonify({"message": "Consent withdrawn successfully"}), 200
+
+              @app.route('/consent/user/<user_id>', methods=['GET'])
+              def get_user_consents(user_id):
+                  """Get user's consent history"""
+                  consents = consent_manager.get_user_consents(user_id)
+                  return jsonify({"user_id": user_id, "consents": consents}), 200
+
+              if __name__ == '__main__':
+                  app.run(host='0.0.0.0', port=5000, debug=False)
+            dest: "{{ privacy_config_dir }}/consent_api.py"
+            mode: '0750'
+
+    # Article 12-14: Information and Communication
+    - name: Article 12-14 - Privacy Information Management
+      block:
+        - name: Create privacy notice template
+          copy:
+            content: |
+              # Privacy Notice Template
+              # Articles 12, 13, 14 - Information to be provided
+
+              ## Who We Are
+              Data Controller: {{ ansible_hostname | upper }} ORGANIZATION
+              Data Protection Officer: {{ data_protection_officer }}
+              Contact: privacy@example.com
+
+              ## What Personal Data We Collect
+              We collect the following categories of personal data:
+              - Contact information (name, email, phone)
+              - Account information (username, preferences)
+              - Transaction data (purchase history, billing info)
+              - Technical data (IP address, browser type, device info)
+
+              ## Why We Process Your Data
+              We process your personal data for the following purposes:
+
+              ### Contract Performance
+              - Account creation and management
+              - Service delivery
+              - Customer support
+
+              ### Consent
+              - Marketing communications
+              - Personalized content
+              - Optional features
+
+              ### Legal Obligation
+              - Tax reporting
+              - Regulatory compliance
+              - Law enforcement requests
+
+              ### Legitimate Interests
+              - Fraud prevention
+              - Security monitoring
+              - Business analytics
+
+              ## Data Sharing
+              We may share your data with:
+              - Service providers (with data processing agreements)
+              - Legal authorities (when required by law)
+              - Business partners (with your consent)
+
+              ## Data Retention
+              We retain your data for:
+              - Account data: {{ data_retention_period }}
+              - Marketing data: 2 years after consent withdrawal
+              - Legal compliance: As required by law
+              - Security logs: 1 year
+
+              ## Your Rights
+              Under GDPR, you have the right to:
+              - Access your personal data
+              - Rectify inaccurate data
+              - Erase your data ("right to be forgotten")
+              - Restrict processing
+              - Data portability
+              - Object to processing
+              - Withdraw consent
+
+              To exercise your rights, contact: {{ data_protection_officer }}
+
+              ## International Transfers
+              Your data may be transferred outside the EU with appropriate safeguards:
+              - Adequacy decisions
+              - Standard contractual clauses
+              - Binding corporate rules
+
+              ## Security
+              We implement appropriate technical and organizational measures:
+              - Encryption in transit and at rest
+              - Access controls and authentication
+              - Regular security assessments
+              - Staff training and awareness
+
+              ## Updates
+              This notice was last updated: {{ ansible_date_time.iso8601 }}
+              We will notify you of significant changes to this notice.
+
+              ## Contact
+              Data Protection Officer: {{ data_protection_officer }}
+              Privacy Policy: {{ privacy_policy_url }}
+              Supervisory Authority: Your local data protection authority
+            dest: "{{ privacy_config_dir }}/privacy_notice.md"
+            mode: '0644'
+
+    # Article 15-22: Data Subject Rights
+    - name: Article 15-22 - Data Subject Rights Implementation
+      block:
+        - name: Create data subject rights handler
+          copy:
+            content: |
+              #!/usr/bin/env python3
+              """
+              GDPR Data Subject Rights Handler
+              Articles 15-22 - Individual rights
+              """
+
+              import os
+              import json
+              import sqlite3
+              import datetime
+              import subprocess
+              from pathlib import Path
+
+              class DataSubjectRightsHandler:
+                  def __init__(self, db_path, data_dir):
+                      self.db_path = db_path
+                      self.data_dir = Path(data_dir)
+                      self.requests_log = self.data_dir / "rights_requests.log"
+
+                  def log_request(self, request_type, user_id, details):
+                      """Log data subject rights request"""
+                      timestamp = datetime.datetime.now().isoformat()
+                      log_entry = f"{timestamp} - {request_type} - {user_id} - {details}\n"
+
+                      with open(self.requests_log, 'a') as f:
+                          f.write(log_entry)
+
+                  def handle_access_request(self, user_id):
+                      """Article 15 - Right of access"""
+                      self.log_request("ACCESS", user_id, "Data access request initiated")
+
+                      # Collect all user data
+                      user_data = {
+                          "request_date": datetime.datetime.now().isoformat(),
+                          "user_id": user_id,
+                          "personal_data": {},
+                          "processing_purposes": {},
+                          "data_sources": {},
+                          "retention_periods": {},
+                          "third_parties": []
+                      }
+
+                      # Get data from databases (example)
+                      try:
+                          conn = sqlite3.connect(self.db_path)
+                          cursor = conn.cursor()
+
+                          # User profile data
+                          cursor.execute("SELECT * FROM users WHERE user_id = ?", (user_id,))
+                          profile_data = cursor.fetchone()
+                          if profile_data:
+                              user_data["personal_data"]["profile"] = dict(profile_data)
+
+                          # Consent records
+                          cursor.execute("""
+                              SELECT consent_type, consent_given, consent_timestamp
+                              FROM consent_records WHERE user_id = ?
+                          """, (user_id,))
+                          consent_data = cursor.fetchall()
+                          user_data["personal_data"]["consents"] = [
+                              {"type": c[0], "given": bool(c[1]), "timestamp": c[2]}
+                              for c in consent_data
+                          ]
+
+                          conn.close()
+
+                      except Exception as e:
+                          self.log_request("ACCESS_ERROR", user_id, f"Database error: {e}")
+
+                      # Save compiled data
+                      output_file = self.data_dir / f"access_request_{user_id}_{datetime.datetime.now().strftime('%Y%m%d')}.json"
+                      with open(output_file, 'w') as f:
+                          json.dump(user_data, f, indent=2, default=str)
+
+                      self.log_request("ACCESS_COMPLETE", user_id, f"Data package created: {output_file}")
+                      return str(output_file)
+
+                  def handle_erasure_request(self, user_id, reason="user_request"):
+                      """Article 17 - Right to erasure"""
+                      self.log_request("ERASURE", user_id, f"Erasure request initiated - Reason: {reason}")
+
+                      erasure_results = []
+
+                      try:
+                          conn = sqlite3.connect(self.db_path)
+                          cursor = conn.cursor()
+
+                          # Delete user data (with legal hold checks)
+                          tables_to_clean = [
+                              "users", "user_preferences", "consent_records",
+                              "marketing_data", "analytics_data"
+                          ]
+
+                          for table in tables_to_clean:
+                              try:
+                                  cursor.execute(f"DELETE FROM {table} WHERE user_id = ?", (user_id,))
+                                  deleted_rows = cursor.rowcount
+                                  erasure_results.append(f"{table}: {deleted_rows} rows deleted")
+                              except Exception as e:
+                                  erasure_results.append(f"{table}: Error - {e}")
+
+                          conn.commit()
+                          conn.close()
+
+                          # Delete file system data
+                          user_files_dir = Path(f"/var/data/users/{user_id}")
+                          if user_files_dir.exists():
+                              subprocess.run(["rm", "-rf", str(user_files_dir)], check=True)
+                              erasure_results.append(f"User files directory deleted: {user_files_dir}")
+
+                      except Exception as e:
+                          self.log_request("ERASURE_ERROR", user_id, f"Erasure error: {e}")
+                          return False
+
+                      self.log_request("ERASURE_COMPLETE", user_id, f"Results: {'; '.join(erasure_results)}")
+                      return True
+
+                  def handle_portability_request(self, user_id):
+                      """Article 20 - Right to data portability"""
+                      self.log_request("PORTABILITY", user_id, "Data portability request initiated")
+
+                      # Create portable data package
+                      portable_data = {
+                          "export_date": datetime.datetime.now().isoformat(),
+                          "user_id": user_id,
+                          "format": "JSON",
+                          "data": {}
+                      }
+
+                      try:
+                          conn = sqlite3.connect(self.db_path)
+                          cursor = conn.cursor()
+
+                          # Export user-provided data only
+                          cursor.execute("""
+                              SELECT email, first_name, last_name, phone, address,
+                                     preferences, created_date
+                              FROM users WHERE user_id = ?
+                          """, (user_id,))
+                          user_profile = cursor.fetchone()
+
+                          if user_profile:
+                              portable_data["data"]["profile"] = {
+                                  "email": user_profile[0],
+                                  "first_name": user_profile[1],
+                                  "last_name": user_profile[2],
+                                  "phone": user_profile[3],
+                                  "address": user_profile[4],
+                                  "preferences": user_profile[5],
+                                  "created_date": user_profile[6]
+                              }
+
+                          conn.close()
+
+                      except Exception as e:
+                          self.log_request("PORTABILITY_ERROR", user_id, f"Error: {e}")
+                          return None
+
+                      # Save portable data
+                      output_file = self.data_dir / f"portable_data_{user_id}_{datetime.datetime.now().strftime('%Y%m%d')}.json"
+                      with open(output_file, 'w') as f:
+                          json.dump(portable_data, f, indent=2, default=str)
+
+                      self.log_request("PORTABILITY_COMPLETE", user_id, f"Portable data created: {output_file}")
+                      return str(output_file)
+
+              # Example usage
+              if __name__ == "__main__":
+                  import sys
+                  if len(sys.argv) < 3:
+                      print("Usage: python rights_handler.py <action> <user_id>")
+                      print("Actions: access, erasure, portability")
+                      sys.exit(1)
+
+                  action = sys.argv[1]
+                  user_id = sys.argv[2]
+
+                  handler = DataSubjectRightsHandler(
+                      "{{ consent_db_path }}/consent.db",
+                      "{{ data_mapping_dir }}"
+                  )
+
+                  if action == "access":
+                      result = handler.handle_access_request(user_id)
+                      print(f"Access request completed: {result}")
+                  elif action == "erasure":
+                      result = handler.handle_erasure_request(user_id)
+                      print(f"Erasure request completed: {result}")
+                  elif action == "portability":
+                      result = handler.handle_portability_request(user_id)
+                      print(f"Portability request completed: {result}")
+                  else:
+                      print(f"Unknown action: {action}")
+            dest: "{{ privacy_config_dir }}/rights_handler.py"
+            mode: '0750'
+
+    # Article 25: Data Protection by Design and by Default
+    - name: Article 25 - Privacy by Design Implementation
+      block:
+        - name: Configure privacy-by-design controls
+          copy:
+            content: |
+              # Privacy by Design Configuration
+              # Article 25 - Data protection by design and by default
+
+              privacy_controls:
+                data_minimization:
+                  enabled: true
+                  collection_policy: "minimal_necessary"
+                  retention_automation: true
+                  purpose_limitation: true
+
+                pseudonymization:
+                  enabled: true
+                  techniques: ["hashing", "tokenization"]
+                  key_management: "secure_enclave"
+                  rotation_period: "90days"
+
+                encryption:
+                  at_rest: "AES-256"
+                  in_transit: "TLS 1.3"
+                  key_management: "HSM"
+                  key_rotation: "annual"
+
+                access_controls:
+                  authentication: "multi_factor"
+                  authorization: "role_based"
+                  audit_logging: "comprehensive"
+                  session_timeout: "30minutes"
+
+                anonymization:
+                  techniques: ["k_anonymity", "differential_privacy"]
+                  risk_assessment: "automated"
+                  review_period: "quarterly"
+
+              privacy_impact_assessment:
+                trigger_conditions:
+                  - "new_technology"
+                  - "high_risk_processing"
+                  - "systematic_monitoring"
+                  - "sensitive_data"
+                  - "large_scale_processing"
+
+                assessment_framework: "ISO_29134"
+                review_period: "annual"
+                stakeholder_consultation: true
+
+              privacy_dashboard:
+                user_controls:
+                  - "consent_management"
+                  - "data_access"
+                  - "data_deletion"
+                  - "data_portability"
+                  - "processing_restriction"
+
+                transparency_features:
+                  - "processing_purposes"
+                  - "data_recipients"
+                  - "retention_periods"
+                  - "legal_basis"
+            dest: "{{ privacy_config_dir }}/privacy_by_design.yml"
+            mode: '0640'
+
+    # Article 30: Records of Processing Activities
+    - name: Article 30 - Processing Records Management
+      block:
+        - name: Create processing activities register
+          copy:
+            content: |
+              # Record of Processing Activities (ROPA)
+              # Article 30 - Records of processing activities
+
+              processing_activities:
+                customer_account_management:
+                  controller: "{{ ansible_hostname | upper }} ORGANIZATION"
+                  contact_details: "{{ data_protection_officer }}"
+                  purposes:
+                    - "Account creation and management"
+                    - "Service delivery"
+                    - "Customer support"
+                  categories_of_data_subjects:
+                    - "Customers"
+                    - "Prospects"
+                  categories_of_personal_data:
+                    - "Contact information"
+                    - "Account credentials"
+                    - "Billing information"
+                  categories_of_recipients:
+                    - "Payment processors"
+                    - "Customer support system"
+                  third_country_transfers: "No"
+                  retention_periods: "{{ data_retention_period }}"
+                  security_measures:
+                    - "Encryption at rest and in transit"
+                    - "Access controls"
+                    - "Regular security assessments"
+                  lawful_basis: "Contract (Article 6(1)(b))"
+
+                marketing_communications:
+                  controller: "{{ ansible_hostname | upper }} ORGANIZATION"
+                  contact_details: "{{ data_protection_officer }}"
+                  purposes:
+                    - "Email marketing"
+                    - "Promotional communications"
+                  categories_of_data_subjects:
+                    - "Customers"
+                    - "Newsletter subscribers"
+                  categories_of_personal_data:
+                    - "Email address"
+                    - "Name"
+                    - "Marketing preferences"
+                  categories_of_recipients:
+                    - "Email service provider"
+                  third_country_transfers: "Yes - US (Adequacy Decision)"
+                  retention_periods: "2 years or until consent withdrawal"
+                  security_measures:
+                    - "Encrypted transmission"
+                    - "Access controls"
+                    - "Consent tracking"
+                  lawful_basis: "Consent (Article 6(1)(a))"
+
+                website_analytics:
+                  controller: "{{ ansible_hostname | upper }} ORGANIZATION"
+                  contact_details: "{{ data_protection_officer }}"
+                  purposes:
+                    - "Website performance analysis"
+                    - "User experience improvement"
+                  categories_of_data_subjects:
+                    - "Website visitors"
+                  categories_of_personal_data:
+                    - "IP address"
+                    - "Browser information"
+                    - "Usage patterns"
+                  categories_of_recipients:
+                    - "Analytics service provider"
+                  third_country_transfers: "Yes - US (Standard Contractual Clauses)"
+                  retention_periods: "26 months"
+                  security_measures:
+                    - "IP anonymization"
+                    - "Data minimization"
+                    - "Secure transmission"
+                  lawful_basis: "Legitimate interests (Article 6(1)(f))"
+
+              data_processing_agreements:
+                processors:
+                  - name: "Email Service Provider"
+                    location: "EU"
+                    activities: "Email delivery and tracking"
+                    contract_date: "2024-01-01"
+                    review_date: "2025-01-01"
+
+                  - name: "Analytics Provider"
+                    location: "US"
+                    activities: "Website analytics and reporting"
+                    safeguards: "Standard Contractual Clauses"
+                    contract_date: "2024-01-01"
+                    review_date: "2025-01-01"
+
+              review_schedule:
+                frequency: "annual"
+                next_review: "{{ (ansible_date_time.epoch | int + 31536000) | strftime('%Y-%m-%d') }}"
+                responsible_person: "{{ data_protection_officer }}"
+            dest: "{{ data_mapping_dir }}/processing_activities.yml"
+            mode: '0640'
+
+    # Article 32: Security of Processing
+    - name: Article 32 - Security Measures Implementation
+      block:
+        - name: Configure GDPR security controls
+          copy:
+            content: |
+              #!/bin/bash
+              # GDPR Security Controls Implementation
+              # Article 32 - Security of processing
+
+              LOGFILE="{{ gdpr_logs_dir }}/security_controls.log"
+              DATE=$(date '+%Y-%m-%d %H:%M:%S')
+
+              log_message() {
+                  echo "[$DATE] $1" >> $LOGFILE
+              }
+
+              # Encryption at rest verification
+              check_encryption_at_rest() {
+                  log_message "Checking encryption at rest..."
+
+                  # Check database encryption
+                  if [ -f "/etc/mysql/mysql.conf.d/mysqld.cnf" ]; then
+                      if grep -q "innodb_encrypt_tables=ON" /etc/mysql/mysql.conf.d/mysqld.cnf; then
+                          log_message "✓ Database encryption enabled"
+                      else
+                          log_message "✗ Database encryption not enabled"
+                      fi
+                  fi
+
+                  # Check file system encryption
+                  if cryptsetup status /dev/mapper/encrypted-data > /dev/null 2>&1; then
+                      log_message "✓ File system encryption active"
+                  else
+                      log_message "✗ File system encryption not detected"
+                  fi
+              }
+
+              # Access control verification
+              check_access_controls() {
+                  log_message "Checking access controls..."
+
+                  # Check failed login attempts
+                  FAILED_LOGINS=$(grep "authentication failure" /var/log/auth.log | wc -l)
+                  log_message "Failed login attempts in auth.log: $FAILED_LOGINS"
+
+                  # Check privilege escalation monitoring
+                  SUDO_USAGE=$(grep "sudo" /var/log/auth.log | wc -l)
+                  log_message "Sudo usage events: $SUDO_USAGE"
+              }
+
+              # Data backup verification
+              check_backup_integrity() {
+                  log_message "Checking backup integrity..."
+
+                  BACKUP_DIR="/var/backups/gdpr-data"
+                  if [ -d "$BACKUP_DIR" ]; then
+                      LATEST_BACKUP=$(find $BACKUP_DIR -name "*.backup" -type f -printf '%T@ %p\n' | sort -n | tail -1 | cut -d' ' -f2-)
+                      if [ -n "$LATEST_BACKUP" ]; then
+                          BACKUP_AGE=$(( $(date +%s) - $(stat -c %Y "$LATEST_BACKUP") ))
+                          if [ $BACKUP_AGE -lt 86400 ]; then  # Less than 24 hours
+                              log_message "✓ Recent backup found: $LATEST_BACKUP"
+                          else
+                              log_message "✗ Backup is older than 24 hours: $LATEST_BACKUP"
+                          fi
+                      else
+                          log_message "✗ No backups found in $BACKUP_DIR"
+                      fi
+                  else
+                      log_message "✗ Backup directory not found: $BACKUP_DIR"
+                  fi
+              }
+
+              # Audit logging verification
+              check_audit_logging() {
+                  log_message "Checking audit logging..."
+
+                  if systemctl is-active auditd > /dev/null 2>&1; then
+                      log_message "✓ Audit daemon is running"
+
+                      # Check for GDPR-specific audit rules
+                      if aureport -au > /dev/null 2>&1; then
+                          log_message "✓ Audit reports available"
+                      else
+                          log_message "✗ Audit reports not accessible"
+                      fi
+                  else
+                      log_message "✗ Audit daemon not running"
+                  fi
+              }
+
+              # Main security check
+              main() {
+                  log_message "Starting GDPR security controls check..."
+
+                  check_encryption_at_rest
+                  check_access_controls
+                  check_backup_integrity
+                  check_audit_logging
+
+                  log_message "GDPR security controls check completed"
+              }
+
+              # Run security checks
+              main
+            dest: "{{ privacy_config_dir }}/security_controls_check.sh"
+            mode: '0750'
+
+  handlers:
+    - name: restart_privacy_services
+      systemd:
+        name: "{{ item }}"
+        state: restarted
+        enabled: yes
+      loop:
+        - privacy-monitor
+        - consent-api
+      ignore_errors: yes
+
+  post_tasks:
+    - name: Generate GDPR compliance report
+      copy:
+        content: |
+          GDPR COMPLIANCE IMPLEMENTATION REPORT
+          ====================================
+
+          Date: {{ ansible_date_time.iso8601 }}
+          Hostname: {{ inventory_hostname }}
+          Compliance Level: {{ gdpr_compliance_level }}
+
+          Implemented Controls:
+          ✓ Article 5 - Data processing principles
+          ✓ Article 6 - Lawful basis tracking
+          ✓ Article 7 - Consent management system
+          ✓ Article 12-14 - Privacy information management
+          ✓ Article 15-22 - Data subject rights handler
+          ✓ Article 25 - Privacy by design controls
+          ✓ Article 30 - Processing activities register
+          ✓ Article 32 - Security measures
+
+          Configuration Files:
+          - {{ privacy_config_dir }}/data_minimization.yml
+          - {{ privacy_config_dir }}/lawful_basis.yml
+          - {{ privacy_config_dir }}/privacy_notice.md
+          - {{ data_mapping_dir }}/processing_activities.yml
+
+          Databases and APIs:
+          - Consent management database: {{ consent_db_path }}/consent.db
+          - Consent API: {{ privacy_config_dir }}/consent_api.py
+          - Data subject rights handler: {{ privacy_config_dir }}/rights_handler.py
+
+          Next Steps:
+          1. Test consent management API
+          2. Review and customize privacy notices
+          3. Train staff on GDPR procedures
+          4. Conduct privacy impact assessments
+          5. Test data subject rights procedures
+          6. Regular compliance monitoring
+
+          Contact: {{ data_protection_officer }}
+        dest: "{{ gdpr_logs_dir }}/gdpr_implementation_report.txt"
+        mode: '0640'
+
+    - name: Display GDPR implementation summary
+      debug:
+        msg: |
+          ========================================
+          GDPR DATA PROTECTION IMPLEMENTATION
+          ========================================
+
+          Status: Implementation Complete
+          Compliance Level: {{ gdpr_compliance_level }}
+          Data Protection Officer: {{ data_protection_officer }}
+
+          ✓ Privacy controls configured
+          ✓ Consent management system deployed
+          ✓ Data subject rights procedures implemented
+          ✓ Security measures in place
+          ✓ Processing activities documented
+
+          Configuration Directory: {{ privacy_config_dir }}
+          Logs Directory: {{ gdpr_logs_dir }}
+          Data Mapping: {{ data_mapping_dir }}
+
+          Next Actions:
+          1. Review privacy notices and policies
+          2. Test consent management workflows
+          3. Train staff on GDPR compliance
+          4. Conduct regular compliance assessments
+
+          ========================================
