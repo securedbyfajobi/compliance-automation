@@ -1,0 +1,39 @@
+{
+  "execution_summary": {
+    "start_time": "2025-09-27T01:36:28.606561",
+    "end_time": "2025-09-27T01:36:28.607528",
+    "total_execution_time": 0.000967,
+    "frameworks_run": 5,
+    "successful": 0,
+    "failed": 5
+  },
+  "framework_results": {
+    "iso27001": {
+      "framework": "iso27001",
+      "status": "ERROR",
+      "error": "name '__file__' is not defined"
+    },
+    "gdpr": {
+      "framework": "gdpr",
+      "status": "ERROR",
+      "error": "name '__file__' is not defined"
+    },
+    "nist": {
+      "framework": "nist",
+      "status": "ERROR",
+      "error": "name '__file__' is not defined"
+    },
+    "pci_dss": {
+      "framework": "pci_dss",
+      "status": "ERROR",
+      "error": "name '__file__' is not defined"
+    },
+    "soc2": {
+      "framework": "soc2",
+      "status": "ERROR",
+      "error": "name '__file__' is not defined"
+    }
+  },
+  "compliance_scores": {},
+  "overall_compliance": 0
+}

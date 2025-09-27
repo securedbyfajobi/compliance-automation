@@ -1,0 +1,21 @@
+{
+  "timestamp": "2025-09-27T01:38:26.926581",
+  "framework": "GDPR",
+  "overall_compliance": 82.3,
+  "summary": {
+    "total_checks": 5,
+    "implemented": 4,
+    "not_implemented": 1,
+    "compliance_score": 82.3
+  },
+  "technical_measures": {
+    "data_encryption": {
+      "status": "Implemented",
+      "compliant": true
+    },
+    "access_controls": {
+      "status": "Partial",
+      "compliant": false
+    }
+  }
+}

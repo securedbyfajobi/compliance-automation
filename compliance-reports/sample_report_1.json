@@ -1,0 +1,32 @@
+{
+  "timestamp": "2025-09-27T01:38:26.926571",
+  "framework": "ISO 27001:2013",
+  "overall_score": 87.5,
+  "summary": {
+    "total_controls": 21,
+    "implemented": 18,
+    "not_implemented": 2,
+    "partial": 1,
+    "compliance_score": 87.5
+  },
+  "controls": {
+    "A.5.1.1": {
+      "status": "Implemented",
+      "description": "Information security policies"
+    },
+    "A.9.1.1": {
+      "status": "Implemented",
+      "description": "Access control policy"
+    },
+    "A.12.6.1": {
+      "status": "Partial",
+      "description": "Management of technical vulnerabilities"
+    }
+  },
+  "recommendations": [
+    {
+      "issue": "Implement missing access controls",
+      "remediation": "Deploy additional IAM policies"
+    }
+  ]
+}

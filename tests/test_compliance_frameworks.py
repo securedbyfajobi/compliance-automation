@@ -6,7 +6,6 @@ Tests all compliance frameworks and their AWS integrations
 
 import json
 import os
-import pytest
 import tempfile
 import unittest
 from datetime import datetime

@@ -1,0 +1,12 @@
+{
+  "timestamp": "2025-09-27T01:38:26.926584",
+  "framework": "NIST Cybersecurity Framework",
+  "overall_score": 79.2,
+  "aws_summary": {
+    "total_checks": 8,
+    "implemented": 6,
+    "partial": 1,
+    "not_implemented": 1,
+    "compliance_score": 79.2
+  }
+}
