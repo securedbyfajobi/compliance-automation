@@ -34,25 +34,31 @@ class ComplianceRunner:
                     'enabled': True,
                     'script': 'iso27001-automation/compliance_checker.py',
                     'timeout': 300,
-                    'args': ['--output', 'json']
+                    'args': ['--region', 'eu-west-2', '--format', 'json']
                 },
                 'gdpr': {
                     'enabled': True,
                     'script': 'gdpr-compliance/gdpr_validator.py',
                     'timeout': 180,
-                    'args': ['--data-inventory']
+                    'args': ['--region', 'eu-west-2', '--format', 'json']
                 },
                 'nist': {
                     'enabled': True,
                     'script': 'nist-framework/nist_validator.py',
                     'timeout': 240,
-                    'args': ['--functions', 'all']
+                    'args': ['--region', 'eu-west-2', '--format', 'json']
                 },
                 'pci_dss': {
                     'enabled': True,
                     'script': 'pci-dss-scanner/pci_dss_scanner.py',
                     'timeout': 360,
-                    'args': ['--scope', 'production']
+                    'args': ['--format', 'json']
+                },
+                'soc2': {
+                    'enabled': True,
+                    'script': 'soc2-compliance/soc2_validator.py',
+                    'timeout': 300,
+                    'args': ['--region', 'eu-west-2', '--format', 'json']
                 }
             },
             'execution': {
@@ -400,7 +406,7 @@ def main():
     parser = argparse.ArgumentParser(description='Compliance Framework Runner')
     parser.add_argument('--config', help='Configuration file path')
     parser.add_argument('--frameworks', nargs='+', help='Specific frameworks to run',
-                        choices=['iso27001', 'gdpr', 'nist', 'pci_dss'])
+                        choices=['iso27001', 'gdpr', 'nist', 'pci_dss', 'soc2'])
     parser.add_argument('--parallel', action='store_true', help='Run frameworks in parallel')
     parser.add_argument('--output-dir', help='Output directory for results')
     parser.add_argument('--format', nargs='+', choices=['json', 'html', 'csv'],
